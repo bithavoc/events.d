@@ -25,45 +25,6 @@ import std.stdio;
 import std.algorithm;
 import std.string;
 
-/*
-// event list declared with string return value, first parameter as string and second parameters as int.
-static EventList!(string, string, int) formatter;
-
-// event list declared with no parameters and returning void.
-static EventList!void voidEvents;
-
-void main() {
-auto a = 2;
-
-formatter = new EventList!(string, string, int)();
-
-// add a delegate to the list
-formatter.add((text, value){
-a++;
-return text.format(value);
-});
-
-// same operation but with ^ 
-formatter ^ (text, value) {
-return "replaced by last call";
-};
-auto formatterTrigger = formatter.own;
-
-auto text = formatterTrigger("hello %d", 23);
-text.writeln;
-
-voidEvents = new EventList!void;
-auto voidEventsTrigger = voidEvents.own;
-voidEventsTrigger.changed = (operation, dele) {
-"subscription executed".writeln;
-};
-voidEvents ^ {
-"simple to execute".writeln;
-};
-voidEventsTrigger();
-}
- */
-
 enum EventListOperation {
     Unknown,
     Added,

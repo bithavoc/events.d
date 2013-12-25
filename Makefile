@@ -10,5 +10,11 @@ tests: test/*.d events
 	chmod +x out/test.app
 	out/./test.app
 
+examples: examples/*.d events
+	$(DC) -Iout/events out/events.d.a examples/simpleExample.d -ofout/simpleExample
+	$(DC) -Iout/events out/events.d.a examples/paramsExample.d -ofout/paramsExample
+	$(DC) -Iout/events out/events.d.a examples/returnExample.d -ofout/returnExample
+	$(DC) -Iout/events out/events.d.a examples/changedExample.d -ofout/changedExample
+
 clean:
 	rm -rf out/*
