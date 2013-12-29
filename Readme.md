@@ -8,7 +8,7 @@ events.d is an Event Object Model for the D programming language, with elegant d
 events.d main goal is to allow subscription of multiple delegates with the same signature to a List.
 A trigger is then used to call the list of subscribed delegates.
 
-## Triggers
+### Triggers
 
 Every event list must be owned by a caller using the method `EventsList.own`, the call will only work the first time so the best practice is to own the 
 event list right after instantiation.
@@ -26,7 +26,7 @@ The trigger objects works like a function to call all the subscribed delegates.
     trigger();
 ```
 
-## Subscription
+### Subscription
 
 Subscription is performed by the `add` method:
 
@@ -46,18 +46,7 @@ The same operation can be performed with syntax sugar:
     };
 ```
 
-## Watching changes
-
-The trigger can provide notifications to the owner about the operation beign performed in the event list:
-
-
-```D
-    trigger.changed = (EventListOperation op, item) {
-        "%s %s".format(op, item).writeln;
-    };
-```
-
-## Return Value
+### Return Value
 
 The first type of the EventList template is the return type, it's required even if the type is `void`:
 
@@ -78,7 +67,7 @@ The return type is reflected in the signature of the call and the delegates:
 ```
 
 
-## Parameters
+### Parameters
 
 The types next to the return type belong to the parameters of the delegate:
 
@@ -91,7 +80,7 @@ The types next to the return type belong to the parameters of the delegate:
     int value  = trigger(20.0); // value = 60
 ```
 
-## Advanced: Fibers
+### Advanced: Fibers
 
 A derived class of `EventList` called `FiberedEventList` executes every subscribed delegate of the event list in a different [Fiber](http://dlang.org/phobos/core_thread.html#.Fiber). Inside the delegate, you can capture the current Fiber using [Fiber.getThis](http://dlang.org/phobos/core_thread.html#.Fiber.getThis) part of the standard module [core.thread](http://dlang.org/phobos/core_thread.html).
 
@@ -107,6 +96,17 @@ A derived class of `EventList` called `FiberedEventList` executes every subscrib
 
     auto text = trigger(30);
     text.writeln;
+```
+
+### Advanced: Watching Changes
+
+The trigger can provide notifications to the owner about the operation beign performed in the event list:
+
+
+```D
+    trigger.changed = (EventListOperation op, item) {
+        "%s %s".format(op, item).writeln;
+    };
 ```
 
 ## Building
