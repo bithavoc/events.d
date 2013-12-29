@@ -91,6 +91,24 @@ The types next to the return type belong to the parameters of the delegate:
     int value  = trigger(20.0); // value = 60
 ```
 
+## Advanced: Fibers
+
+A derived class of `EventList` called `FiberedEventList` executes every subscribed delegate of the event list in a different [Fiber](http://dlang.org/phobos/core_thread.html#.Fiber). Inside the delegate, you can capture the current Fiber using [Fiber.getThis](http://dlang.org/phobos/core_thread.html#.Fiber.getThis) part of the standard module [core.thread](http://dlang.org/phobos/core_thread.html).
+
+```D
+    import core.thread;
+    ...
+    auto event = new FiberedEventList!(string, int);
+    auto trigger = event.own;
+
+    event ^ (age) {
+        return "third age is %d in Fiber %s".format(age, Fiber.getThis);
+    };
+
+    auto text = trigger(30);
+    text.writeln;
+```
+
 ## Building
 
     git clone https://github.com/heapsource/events.d.git

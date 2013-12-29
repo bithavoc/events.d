@@ -57,6 +57,9 @@ class EventList(TReturn, Args...) {
             this.notify(EventListOperation.Added, item);
         }
 
+        protected TReturn onExecute(TReturn delegate(Args) item, Args args) {
+            return item(args);
+        }
 
         final class Trigger {
 package:
@@ -77,13 +80,13 @@ package:
                 static if (is( TReturn == void )) {
                     // it's void returning, don't do anything
                     foreach(d;_list) {
-                        d(args);
+                        return this.outer.onExecute(d, args);
                     }
                 } else {
                     // execute saving the last result
                     TReturn v;
                     foreach(d;_list) {
-                        v = d(args);
+                        v = this.outer.onExecute(d, args);
                     }
                     return v;
                 }
@@ -96,4 +99,26 @@ package:
             }
             return _trigger = new Trigger;
         }
+}
+
+import core.thread;
+
+class FiberedEventList(TReturn, Args...) : EventList!(TReturn, Args) {
+    protected override TReturn onExecute(TReturn delegate(Args) item, Args args) {
+        static if (is( TReturn == void )) {
+            // it's void returning, don't do anything
+            Fiber fiber = new Fiber( {
+                item(args);             
+            });
+            fiber.call;
+        } else {
+            // execute saving the last result
+            TReturn v;
+            Fiber fiber = new Fiber( {
+                v = item(args);             
+            });
+            fiber.call;
+            return v;
+        }
+    }
 }

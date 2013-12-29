@@ -103,5 +103,42 @@ unittest {
         trigger();
         assert(lastException !is null);
     }
+    {
+        import core.thread;
+        // Void Fibered Event List
+        auto list = new FiberedEventList!void;
+        auto trigger = list.own;
+        Fiber executedFiber = null;
+        Fiber executedFiber2 = null;
+        list ^ {
+            executedFiber = Fiber.getThis;
+        };
+        list ^ {
+            executedFiber2 = Fiber.getThis;
+        };
+        trigger();
+        assert(executedFiber !is null, "the delegate must be invoked inside a fiber");
+        assert(executedFiber != executedFiber2, "make sure every delegate gets it's own Fiber");
+    }
+    {
+        import core.thread;
+        // Return Fibered Event List
+        auto list = new FiberedEventList!(int);
+        auto trigger = list.own;
+        Fiber executedFiber = null;
+        Fiber executedFiber2 = null;
+        list ^ {
+            executedFiber = Fiber.getThis;
+            return 10;
+        };
+        list ^ {
+            executedFiber2 = Fiber.getThis;
+            return 20;
+        };
+        int result = trigger();
+        assert(result == 20);
+        assert(executedFiber !is null, "the delegate must be invoked inside a fiber");
+        assert(executedFiber != executedFiber2, "make sure every delegate gets it's own Fiber");
+    }
     writeln("tests just ran");
 } // test

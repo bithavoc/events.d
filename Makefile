@@ -15,6 +15,7 @@ examples: examples/*.d events
 	$(DC) -Iout/events out/events.d.a examples/paramsExample.d -ofout/paramsExample
 	$(DC) -Iout/events out/events.d.a examples/returnExample.d -ofout/returnExample
 	$(DC) -Iout/events out/events.d.a examples/changedExample.d -ofout/changedExample
+	$(DC) -Iout/events out/events.d.a examples/fiberedExample.d -ofout/fiberedExample
 
 clean:
 	rm -rf out/*
