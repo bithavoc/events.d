@@ -46,6 +46,18 @@ The same operation can be performed with syntax sugar:
     };
 ```
 
+### Unsubscription
+
+Unsubscription or removal of delegates from the event list can be achieved with the method `remove`. The same instance of the delegate subscribed must be provided in order to properly perform the removal.
+
+```D
+        auto myDelegate = delegate int {
+            return 3000;
+        };
+        list ^ myDelegate;
+        list.remove(myDelegate) // trigger.count will now reporting one less subscription
+```
+
 ### Return Value
 
 The first type of the EventList template is the return type, it's required even if the type is `void`:
@@ -105,6 +117,11 @@ The trigger can provide notifications to the owner about the operation beign per
 
 ```D
     trigger.changed = (EventListOperation op, item) {
+        if(op == EventListOperation.Added) {
+            "new delegate subscribed".writeln;
+        } else if(op == EventListOperation.Removed) {
+            "new delegate unsubscribed".writeln;
+        }
         "%s %s".format(op, item).writeln;
     };
 ```

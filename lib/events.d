@@ -23,7 +23,9 @@ module events;
 
 import std.stdio;
 import std.algorithm;
+import std.container;
 import std.string;
+import std.range;
 
 enum EventListOperation {
     Unknown,
@@ -33,18 +35,19 @@ enum EventListOperation {
 
 class EventList(TReturn, Args...) {
 
+    alias TReturn delegate(Args) delegateType;
     private:
-        TReturn delegate(Args)[] _list;
+        delegateType[] _list;
         Trigger _trigger;
 
-        void notify(EventListOperation operation, TReturn delegate(Args) item) {
+        void notify(EventListOperation operation, delegateType item) {
             if(_trigger !is null && _trigger.changed) {
                 _trigger.changed(operation, item);
             }
         }
     public:
 
-        auto opBinary(string op)(TReturn delegate(Args) rhs) {
+        auto opBinary(string op)(delegateType rhs) {
             static if (op == "^") {
                 this.add(rhs);
             }
@@ -52,17 +55,17 @@ class EventList(TReturn, Args...) {
             return this;
         }
 
-        void add(TReturn delegate(Args args) item) {
+        void add(delegateType item) {
             _list ~= item;
             this.notify(EventListOperation.Added, item);
         }
 
-        protected TReturn onExecute(TReturn delegate(Args) item, Args args) {
+        protected TReturn onExecute(delegateType item, Args args) {
             return item(args);
         }
 
         final class Trigger {
-package:
+            package:
 
             // protect constructor, use EventList.own instead
             this() {
@@ -71,11 +74,12 @@ package:
 
             public:
 
-            void delegate(EventListOperation operation, TReturn delegate(Args) item) changed;
+            void delegate(EventListOperation operation, delegateType item) changed;
 
             auto opCall(Args args) {
                 return execute(args);
             }
+
             auto execute(Args args) {
                 static if (is( TReturn == void )) {
                     // it's void returning, don't do anything
@@ -91,6 +95,11 @@ package:
                     return v;
                 }
             }
+
+            @property size_t count() {
+                return _list.length;
+            }
+
         }
 
         auto own() {
@@ -99,6 +108,19 @@ package:
             }
             return _trigger = new Trigger;
         }
+
+        void remove(delegateType item) {
+            auto r = _list.find(item).take(1);
+            delegateType[] newList;
+            foreach(existingItem; _list) {
+                if(existingItem != item) {
+                    newList ~= existingItem;
+                }
+            }
+            _list = newList;
+            notify(EventListOperation.Removed, item);
+        }
+
 }
 
 import core.thread;

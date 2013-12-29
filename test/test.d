@@ -140,5 +140,37 @@ unittest {
         assert(executedFiber !is null, "the delegate must be invoked inside a fiber");
         assert(executedFiber != executedFiber2, "make sure every delegate gets it's own Fiber");
     }
+    {
+        // events count via trigger and remove
+        auto list = new EventList!int;
+        auto trigger = list.own;
+
+        // hold delegate instance so we can remove it later on
+        auto del1 = delegate int {
+            return 2000;
+        };
+        list ^ del1;
+        assert(trigger.count == 1, "the list of subscriptions must be 1");
+
+        auto del2 = delegate int {
+            return 3000;
+        };
+        list ^ del2;
+        assert(trigger.count == 2, "the list of subscriptions must be 2 since a new delegate was subscribed");
+        assert(trigger() == 3000, "the return value must be the return value of the last delegate");
+
+        int delegate() itemRemoved;
+        trigger.changed = (op, item) {
+            if(op == EventListOperation.Removed) {
+                itemRemoved = item;
+            }
+        };
+
+        list.remove(del2);
+        assert(trigger.count == 1, "the list of subscriptions must be 1 since we just removed a subscription");
+        assert(trigger() == 2000, "the return value must be the return value of the remaining last delegate");
+        assert(del2 == itemRemoved, "Trigger.changed event should have been called with the operation Remove and the given delegate instance being removed");
+        
+    }
     writeln("tests just ran");
 } // test

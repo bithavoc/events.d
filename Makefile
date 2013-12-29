@@ -6,7 +6,7 @@ events: lib/*.d
 	ar -r out/events.d.a out/events.d.o
 
 tests: test/*.d events
-	$(DC) -Iout/events out/events.d.a test/*.d -ofout/test.app -unittest -main
+	$(DC) lib/*.d out/events.d.a test/*.d -ofout/test.app -unittest -main
 	chmod +x out/test.app
 	out/./test.app
 
