@@ -172,5 +172,26 @@ unittest {
         assert(del2 == itemRemoved, "Trigger.changed event should have been called with the operation Remove and the given delegate instance being removed");
         
     }
+    {
+        // activation
+        auto list = new EventList!void;
+        bool[] activationEvents;
+        auto trigger = list.own((activated) {
+           activationEvents ~= activated; 
+        });
+
+        // hold delegate instance so we can remove it later on
+        auto del1 = delegate void { };
+        list ^ del1;
+
+        auto del2 = delegate void { };
+        list ^ del2;
+
+        list.remove(del1);
+        list.remove(del2);
+
+        assert(activationEvents == [true, false], "there must be one 1 activation event and 1 deactivation");
+        
+    }
     writeln("tests just ran");
 } // test

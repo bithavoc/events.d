@@ -21,7 +21,6 @@
 
 module events;
 
-import std.stdio;
 import std.algorithm;
 import std.container;
 import std.string;
@@ -36,16 +35,30 @@ enum EventListOperation {
 class EventList(TReturn, Args...) {
 
     alias TReturn delegate(Args) delegateType;
+    alias void delegate(bool activated) activationDelegate;
     private:
         delegateType[] _list;
         Trigger _trigger;
 
-        void notify(EventListOperation operation, delegateType item) {
-            if(_trigger !is null && _trigger.changed) {
-                _trigger.changed(operation, item);
+        void notify(EventListOperation operation, delegateType item, size_t previousCount) {
+            if(_trigger !is null) {
+                if(_trigger.changed) {
+                    _trigger.changed(operation, item);
+                }
+                auto subscriptionCount = normalizedCount;
+                if(_trigger.activation !is null && ((previousCount == 0 && subscriptionCount == 1) || (previousCount == 1 && subscriptionCount == 0))) {
+                    _trigger.activation(this.active); 
+                }
             }
         }
+        @property size_t normalizedCount() {
+            return _trigger !is null ? _trigger.count : 0;
+        }
     public:
+
+        @property bool active() {
+            return normalizedCount != 0;
+        }
 
         auto opBinary(string op)(delegateType rhs) {
             static if (op == "^") {
@@ -56,8 +69,9 @@ class EventList(TReturn, Args...) {
         }
 
         void add(delegateType item) {
+            auto oldCount = normalizedCount;
             _list ~= item;
-            this.notify(EventListOperation.Added, item);
+            this.notify(EventListOperation.Added, item, oldCount);
         }
 
         protected TReturn onExecute(delegateType item, Args args) {
@@ -75,6 +89,8 @@ class EventList(TReturn, Args...) {
             public:
 
             void delegate(EventListOperation operation, delegateType item) changed;
+
+            activationDelegate activation;
 
             auto opCall(Args args) {
                 return execute(args);
@@ -103,14 +119,20 @@ class EventList(TReturn, Args...) {
         }
 
         auto own() {
+            return this.own(null);
+        }
+
+        auto own(activationDelegate activation) {
             if(_trigger !is null) {
                 throw new Exception("Event already owned");
             }
-            return _trigger = new Trigger;
+            _trigger = new Trigger;
+            _trigger.activation = activation;
+            return _trigger;
         }
 
         void remove(delegateType item) {
-            auto r = _list.find(item).take(1);
+            auto oldCount = normalizedCount;
             delegateType[] newList;
             foreach(existingItem; _list) {
                 if(existingItem != item) {
@@ -118,7 +140,7 @@ class EventList(TReturn, Args...) {
                 }
             }
             _list = newList;
-            notify(EventListOperation.Removed, item);
+            notify(EventListOperation.Removed, item, oldCount);
         }
 
 }

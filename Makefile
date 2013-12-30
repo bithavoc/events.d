@@ -1,12 +1,13 @@
 DC=dmd
+DFLAGS=-g -gs -debug
 
 events: lib/*.d
 	mkdir -p out/events
-	$(DC) -Hdout/events -c -ofout/events.d.o lib/*.d
+	$(DC) -Hdout/events -c -ofout/events.d.o lib/*.d $(DFLAGS)
 	ar -r out/events.d.a out/events.d.o
 
 tests: test/*.d events
-	$(DC) lib/*.d out/events.d.a test/*.d -ofout/test.app -unittest -main
+	$(DC) lib/*.d out/events.d.a test/*.d -ofout/test.app -unittest -main $(DFLAGS)
 	chmod +x out/test.app
 	out/./test.app
 

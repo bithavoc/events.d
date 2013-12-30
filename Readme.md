@@ -126,6 +126,30 @@ The trigger can provide notifications to the owner about the operation beign per
     };
 ```
 
+### Advanced: Activation
+
+All events are considered active once the first delegate is subscribed to the event. 
+Events owners can provide a delegate to the method `own` to perform actions when the event changes it's activation state.
+
+The main difference between the activation delegate (also setteable via `Trigger.activation`) and the changes delegate (`Trigger.changed`)
+is that the changes delegates is executed unconditionally when a delegate is subscribed or unsubscribed to the event, unlike `Trigger.activation` which is only triggered under the following scenarios:
+
+ __Active__ : The event just went from 0 subscribers to 1 subscriber.
+
+ __Inactive__: The event just went from 1 subscriber to 0 subscribers.
+
+Example:
+
+```D
+        auto trigger = list.own((activated) {
+            if(activated) {
+                "first delegate subscribed".writeln;
+            } else {
+                "no more delegates subscribed".writeln;
+            }
+        });
+```
+
 ## Building
 
     git clone https://github.com/heapsource/events.d.git
