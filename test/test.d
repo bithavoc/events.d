@@ -176,8 +176,11 @@ unittest {
         // activation
         auto list = new EventList!void;
         bool[] activationEvents;
-        auto trigger = list.own((activated) {
+        list.Trigger trigger;
+        list.Trigger sentTrigger;
+        trigger = list.own((innerTrigger, activated) {
            activationEvents ~= activated; 
+           sentTrigger = innerTrigger;
         });
 
         // hold delegate instance so we can remove it later on
@@ -191,7 +194,7 @@ unittest {
         list.remove(del2);
 
         assert(activationEvents == [true, false], "there must be one 1 activation event and 1 deactivation");
-        
+        assert(sentTrigger == trigger, "trigger given in the activation delegate must be the same as the owned"); 
     }
     writeln("tests just ran");
 } // test

@@ -141,7 +141,7 @@ is that the changes delegates is executed unconditionally when a delegate is sub
 Example:
 
 ```D
-        auto trigger = list.own((activated) {
+        auto trigger = list.own((trigger, activated) {
             if(activated) {
                 "first delegate subscribed".writeln;
             } else {

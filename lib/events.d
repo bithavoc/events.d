@@ -35,7 +35,7 @@ enum EventListOperation {
 class EventList(TReturn, Args...) {
 
     alias TReturn delegate(Args) delegateType;
-    alias void delegate(bool activated) activationDelegate;
+    alias void delegate(Trigger trigger, bool activated) activationDelegate;
     private:
         delegateType[] _list;
         Trigger _trigger;
@@ -47,7 +47,7 @@ class EventList(TReturn, Args...) {
                 }
                 auto subscriptionCount = normalizedCount;
                 if(_trigger.activation !is null && ((previousCount == 0 && subscriptionCount == 1) || (previousCount == 1 && subscriptionCount == 0))) {
-                    _trigger.activation(this.active); 
+                    _trigger.activation(_trigger, this.active); 
                 }
             }
         }
