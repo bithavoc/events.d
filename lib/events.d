@@ -132,14 +132,12 @@ class EventList(TReturn, Args...) {
         }
 
         void remove(delegateType item) {
+            import std.algorithm : countUntil, remove;
             auto oldCount = normalizedCount;
-            delegateType[] newList;
-            foreach(existingItem; _list) {
-                if(existingItem != item) {
-                    newList ~= existingItem;
-                }
+            auto i = _list.countUntil(item);
+            if(i > -1) {
+                _list = _list.remove(i);
             }
-            _list = newList;
             notify(EventListOperation.Removed, item, oldCount);
         }
 
