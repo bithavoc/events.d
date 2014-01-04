@@ -116,6 +116,12 @@ class EventList(TReturn, Args...) {
                 return _list.length;
             }
 
+            void reset() {
+                foreach(d;_list) {
+                    remove(d);
+                }
+            }
+
         }
 
         auto own() {

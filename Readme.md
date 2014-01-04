@@ -58,6 +58,8 @@ Unsubscription or removal of delegates from the event list can be achieved with 
         list.remove(myDelegate) // trigger.count will now reporting one less subscription
 ```
 
+Owners can use the method `Trigger.reset` to unsubscribe all the delegates from the event.
+
 ### Return Value
 
 The first type of the EventList template is the return type, it's required even if the type is `void`:

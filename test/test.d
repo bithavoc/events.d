@@ -196,5 +196,28 @@ unittest {
         assert(activationEvents == [true, false], "there must be one 1 activation event and 1 deactivation");
         assert(sentTrigger == trigger, "trigger given in the activation delegate must be the same as the owned"); 
     }
+    {
+        // reset
+        auto list = new EventList!void;
+        bool[] activationEvents;
+        list.Trigger trigger;
+        list.Trigger sentTrigger;
+        trigger = list.own((innerTrigger, activated) {
+           activationEvents ~= activated; 
+           sentTrigger = innerTrigger;
+        });
+
+        // hold delegate instance so we can remove it later on
+        auto del1 = delegate void { };
+        list ^ del1;
+
+        auto del2 = delegate void { };
+        list ^ del2;
+
+        trigger.reset();
+
+        assert(activationEvents == [true, false], "there must be one 1 activation event and 1 deactivation");
+        assert(sentTrigger == trigger, "trigger given in the activation delegate must be the same as the owned"); 
+    }
     writeln("tests just ran");
 } // test
