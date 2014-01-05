@@ -1,5 +1,10 @@
 DC=dmd
-DFLAGS=-g -gs -debug
+DFLAGS=
+ifeq (${DEBUG}, 1)
+	DFLAGS=-debug -gc -gs -g
+else
+	DFLAGS=-O -release -inline -noboundscheck
+endif
 
 events: lib/*.d
 	mkdir -p out/events

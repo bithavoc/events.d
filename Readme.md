@@ -157,6 +157,9 @@ Example:
     git clone https://github.com/heapsource/events.d.git
     make
 
+You can set the env variable DEBUG=1 to enable compilation with debugging capabilities.
+
+    DEBUG=1 make
 
 ## Examples
 
