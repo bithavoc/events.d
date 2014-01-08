@@ -35,10 +35,7 @@ enum EventOperation {
 
 abstract class Event(TReturn, Args...) {
     alias TReturn delegate(Args) delegateType;
-  
     public: 
-        @property abstract bool active();
-
         auto opBinary(string op)(delegateType rhs) {
             static if (op == "^") {
                 this.add(rhs);
@@ -50,10 +47,7 @@ abstract class Event(TReturn, Args...) {
             return this;
         }
 
-        final void add(delegateType item) {
-            auto oldCount = normalizedCount;
-            onAdd(item, oldCount);
-        }
+        abstract void add(delegateType item);
 
         final void addAsync(delegateType item) {
             auto fibered = delegate TReturn(Args args) {
@@ -75,28 +69,23 @@ abstract class Event(TReturn, Args...) {
             };
             this.add(fibered);
         }
+}
 
-        final void remove(delegateType item) {
-            auto oldCount = normalizedCount;
-            onRemove(item, oldCount);
-        }
-    protected:
+class Action(TReturn, Args...) : Event!(TReturn, Args) {
+    alias TReturn delegate(Args) delegateType;
+    alias void delegate(delegateType) handlerType;
 
-        void onAdd(delegateType item, size_t oldCount) {
-            this.onChanged(EventOperation.Added, item, oldCount);
-        }
+    private: 
+    handlerType _handler;
 
-        void onRemove(delegateType item, size_t oldCount) {
-            this.onChanged(EventOperation.Removed, item, oldCount);
-        }
+    public:
+    this(handlerType handler) {
+        _handler = handler;
+    }
 
-        TReturn onExecute(delegateType item, Args args) {
-            return item(args);
-        }
-        
-        @property size_t normalizedCount();
-        
-        void onChanged(EventOperation operation, delegateType item, size_t oldCount);
+    override void add(delegateType item) {
+        _handler(item);
+    }
 }
 
 class EventList(TReturn, Args...) : Event!(TReturn, Args) {
@@ -105,7 +94,17 @@ class EventList(TReturn, Args...) : Event!(TReturn, Args) {
         delegateType[] _list;
         Trigger _trigger;
     public:
-        @property override bool active() {
+
+        final override void add(delegateType item) {
+            auto oldCount = normalizedCount;
+            onAdd(item, oldCount);
+        }
+
+        final void remove(delegateType item) {
+            auto oldCount = normalizedCount;
+            onRemove(item, oldCount);
+        }
+        @property bool active() {
             return normalizedCount != 0;
         }
 
@@ -170,25 +169,29 @@ class EventList(TReturn, Args...) : Event!(TReturn, Args) {
 
     protected:
 
-        override void onAdd(delegateType item, size_t oldCount) {
-            _list ~= item;
-            super.onAdd(item, oldCount);
+        TReturn onExecute(delegateType item, Args args) {
+            return item(args);
         }
 
-        override void onRemove(delegateType item, size_t oldCount) {
+        void onAdd(delegateType item, size_t oldCount) {
+            _list ~= item;
+            this.onChanged(EventOperation.Added, item, oldCount);
+        }
+
+        void onRemove(delegateType item, size_t oldCount) {
             import std.algorithm : countUntil, remove;
             auto i = _list.countUntil(item);
             if(i > -1) {
                 _list = _list.remove(i);
             }
-            super.onRemove(item, oldCount);
+            this.onChanged(EventOperation.Removed, item, oldCount);
         }
         
-        override @property size_t normalizedCount() {
+        @property size_t normalizedCount() {
             return _trigger !is null ? _trigger.count : 0;
         }
         
-        override void onChanged(EventOperation operation, delegateType item, size_t oldCount) {
+        void onChanged(EventOperation operation, delegateType item, size_t oldCount) {
             if(_trigger !is null) {
                 if(_trigger.changed) {
                     _trigger.changed(operation, item);

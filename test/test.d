@@ -245,5 +245,21 @@ unittest {
         assert(executedFiber !is null, "the delegate must be invoked inside a fiber");
         assert(executedFiber != executedFiber2, "make sure every delegate gets it's own Fiber");
     }
+    {
+        // Action
+        auto foo = function Action!(void, int)(int max) {
+            auto action = new Action!(void, int)((trigger) {
+                    for(int i = 0; i < max; i++) {
+                        trigger(i);
+                    }
+            });
+            return action;
+        };
+        int values;
+        foo(5) ^ (i) {
+            values+=i;
+        };
+        assert(values == 10);
+    }
     writeln("tests just ran");
 } // test

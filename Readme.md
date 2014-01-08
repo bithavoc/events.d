@@ -152,6 +152,27 @@ Example:
         });
 ```
 
+### Advanced: Actions
+
+An action is an event that get's activated everytime a new delegate is subscribed to the action. Since actions are mostly intended to be returned by functions using closures, the subscription usually happens only one time in the lifetime of the action. A user-defined handler must be given to the action to receive the instance of the delegate that activated the action which can be fired multiple times as needed.
+
+Example:
+```D
+        auto foo = function Action!(void, int)(int max) {
+            auto action = new Action!(void, int)((trigger) {
+                    for(int i = 0; i < max; i++) {
+                        trigger(i);
+                    }
+            });
+            return action;
+        };
+        int values;
+        foo(5) ^ (i) {
+            values+=i;
+        };
+        assert(values == 10);
+```
+
 ## Building
 
     git clone https://github.com/heapsource/events.d.git
