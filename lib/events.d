@@ -1,4 +1,4 @@
-// Copyright (c) 2013 Heapsource.com and Contributors - http://www.heapsource.com
+// Copyright (c) 2013, 2014 Heapsource.com and Contributors - http://www.heapsource.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@ import std.string;
 import std.range;
 import core.thread : Fiber;
 
-enum EventListOperation {
+enum EventOperation {
     Unknown,
     Added,
     Removed
@@ -83,11 +83,11 @@ abstract class Event(TReturn, Args...) {
     protected:
 
         void onAdd(delegateType item, size_t oldCount) {
-            this.onChanged(EventListOperation.Added, item, oldCount);
+            this.onChanged(EventOperation.Added, item, oldCount);
         }
 
         void onRemove(delegateType item, size_t oldCount) {
-            this.onChanged(EventListOperation.Removed, item, oldCount);
+            this.onChanged(EventOperation.Removed, item, oldCount);
         }
 
         TReturn onExecute(delegateType item, Args args) {
@@ -96,7 +96,7 @@ abstract class Event(TReturn, Args...) {
         
         @property size_t normalizedCount();
         
-        void onChanged(EventListOperation operation, delegateType item, size_t oldCount);
+        void onChanged(EventOperation operation, delegateType item, size_t oldCount);
 }
 
 class EventList(TReturn, Args...) : Event!(TReturn, Args) {
@@ -119,7 +119,7 @@ class EventList(TReturn, Args...) : Event!(TReturn, Args) {
 
             public:
 
-            void delegate(EventListOperation operation, delegateType item) changed;
+            void delegate(EventOperation operation, delegateType item) changed;
 
             activationDelegate activation;
 
@@ -188,7 +188,7 @@ class EventList(TReturn, Args...) : Event!(TReturn, Args) {
             return _trigger !is null ? _trigger.count : 0;
         }
         
-        override void onChanged(EventListOperation operation, delegateType item, size_t oldCount) {
+        override void onChanged(EventOperation operation, delegateType item, size_t oldCount) {
             if(_trigger !is null) {
                 if(_trigger.changed) {
                     _trigger.changed(operation, item);

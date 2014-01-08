@@ -118,10 +118,10 @@ The trigger can provide notifications to the owner about the operation beign per
 
 
 ```D
-    trigger.changed = (EventListOperation op, item) {
-        if(op == EventListOperation.Added) {
+    trigger.changed = (EventOperation op, item) {
+        if(op == EventOperation.Added) {
             "new delegate subscribed".writeln;
-        } else if(op == EventListOperation.Removed) {
+        } else if(op == EventOperation.Removed) {
             "new delegate unsubscribed".writeln;
         }
         "%s %s".format(op, item).writeln;

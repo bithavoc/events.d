@@ -73,7 +73,7 @@ unittest {
         auto list = new EventList!(string, int);
         auto trigger = list.own;
         string delegate(int) changedItem;
-        EventListOperation itemOperation;
+        EventOperation itemOperation;
         trigger.changed = (op, item) {
             changedItem = item;
             itemOperation = op;
@@ -83,7 +83,7 @@ unittest {
         };
         list ^ originalItem; // subscribe original item
         assert(trigger(10) == "Value is 10");
-        assert(itemOperation is EventListOperation.Added, "op is %d".format(itemOperation));
+        assert(itemOperation is EventOperation.Added, "op is %d".format(itemOperation));
         assert(changedItem == originalItem);
     }
     {
@@ -124,7 +124,7 @@ unittest {
 
         int delegate() itemRemoved;
         trigger.changed = (op, item) {
-            if(op == EventListOperation.Removed) {
+            if(op == EventOperation.Removed) {
                 itemRemoved = item;
             }
         };
