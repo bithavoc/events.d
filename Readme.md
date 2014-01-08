@@ -96,15 +96,15 @@ The types next to the return type belong to the parameters of the delegate:
 
 ### Advanced: Fibers
 
-A derived class of `EventList` called `FiberedEventList` executes every subscribed delegate of the event list in a different [Fiber](http://dlang.org/phobos/core_thread.html#.Fiber). Inside the delegate, you can capture the current Fiber using [Fiber.getThis](http://dlang.org/phobos/core_thread.html#.Fiber.getThis) part of the standard module [core.thread](http://dlang.org/phobos/core_thread.html).
+Subscribers can use the method `addAsync` or the operator `^^` to subscribe a delegate which executes in it's own fiber [Fiber](http://dlang.org/phobos/core_thread.html#.Fiber). Inside the delegate, you can capture the current Fiber using [Fiber.getThis](http://dlang.org/phobos/core_thread.html#.Fiber.getThis) part of the standard module [core.thread](http://dlang.org/phobos/core_thread.html).
 
 ```D
     import core.thread;
     ...
-    auto event = new FiberedEventList!(string, int);
+    auto event = new EventList!(string, int);
     auto trigger = event.own;
 
-    event ^ (age) {
+    event ^^ (age) {
         return "third age is %d in Fiber %s".format(age, Fiber.getThis);
     };
 
@@ -174,7 +174,7 @@ Use `make examples` to compile all the examples. Executables will be generated i
 
 ## License (MIT)
 
-Copyright (c) 2013 Heapsource.com - http://www.heapsource.com
+Copyright (c) 2013, 2014 Heapsource.com - http://www.heapsource.com
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 

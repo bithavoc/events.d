@@ -12,7 +12,7 @@ events: lib/*.d
 	ar -r out/events.d.a out/events.d.o
 
 tests: test/*.d events
-	$(DC) lib/*.d out/events.d.a test/*.d -ofout/test.app -unittest -main $(DFLAGS)
+	$(DC) lib/*.d test/*.d -ofout/test.app -unittest -main $(DFLAGS)
 	chmod +x out/test.app
 	out/./test.app
 

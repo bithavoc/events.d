@@ -25,6 +25,7 @@ import std.algorithm;
 import std.container;
 import std.string;
 import std.range;
+import core.thread : Fiber;
 
 enum EventListOperation {
     Unknown,
@@ -32,50 +33,80 @@ enum EventListOperation {
     Removed
 }
 
-class EventList(TReturn, Args...) {
-
+abstract class Event(TReturn, Args...) {
     alias TReturn delegate(Args) delegateType;
-    alias void delegate(Trigger trigger, bool activated) activationDelegate;
-    private:
-        delegateType[] _list;
-        Trigger _trigger;
-
-        void notify(EventListOperation operation, delegateType item, size_t previousCount) {
-            if(_trigger !is null) {
-                if(_trigger.changed) {
-                    _trigger.changed(operation, item);
-                }
-                auto subscriptionCount = normalizedCount;
-                if(_trigger.activation !is null && ((previousCount == 0 && subscriptionCount == 1) || (previousCount == 1 && subscriptionCount == 0))) {
-                    _trigger.activation(_trigger, this.active); 
-                }
-            }
-        }
-        @property size_t normalizedCount() {
-            return _trigger !is null ? _trigger.count : 0;
-        }
-    public:
-
-        @property bool active() {
-            return normalizedCount != 0;
-        }
+  
+    public: 
+        @property abstract bool active();
 
         auto opBinary(string op)(delegateType rhs) {
             static if (op == "^") {
                 this.add(rhs);
             }
+            else static if (op == "^^") {
+                this.addAsync(rhs);
+            }
             else static assert(0, "Operator "~op~" not implemented");
             return this;
         }
 
-        void add(delegateType item) {
+        final void add(delegateType item) {
             auto oldCount = normalizedCount;
-            _list ~= item;
-            this.notify(EventListOperation.Added, item, oldCount);
+            onAdd(item, oldCount);
         }
 
-        protected TReturn onExecute(delegateType item, Args args) {
+        final void addAsync(delegateType item) {
+            auto fibered = delegate TReturn(Args args) {
+                static if (is( TReturn == void )) {
+                    // it's void returning, don't do anything
+                    Fiber fiber = new Fiber( {
+                        item(args);             
+                    });
+                    fiber.call;
+                } else {
+                    // execute saving the last result
+                    TReturn v;
+                    Fiber fiber = new Fiber( {
+                        v = item(args);             
+                    });
+                    fiber.call;
+                    return v;
+                }
+            };
+            this.add(fibered);
+        }
+
+        final void remove(delegateType item) {
+            auto oldCount = normalizedCount;
+            onRemove(item, oldCount);
+        }
+    protected:
+
+        void onAdd(delegateType item, size_t oldCount) {
+            this.onChanged(EventListOperation.Added, item, oldCount);
+        }
+
+        void onRemove(delegateType item, size_t oldCount) {
+            this.onChanged(EventListOperation.Removed, item, oldCount);
+        }
+
+        TReturn onExecute(delegateType item, Args args) {
             return item(args);
+        }
+        
+        @property size_t normalizedCount();
+        
+        void onChanged(EventListOperation operation, delegateType item, size_t oldCount);
+}
+
+class EventList(TReturn, Args...) : Event!(TReturn, Args) {
+        alias void delegate(Trigger trigger, bool activated) activationDelegate;
+    private:
+        delegateType[] _list;
+        Trigger _trigger;
+    public:
+        @property override bool active() {
+            return normalizedCount != 0;
         }
 
         final class Trigger {
@@ -137,36 +168,36 @@ class EventList(TReturn, Args...) {
             return _trigger;
         }
 
-        void remove(delegateType item) {
+    protected:
+
+        override void onAdd(delegateType item, size_t oldCount) {
+            _list ~= item;
+            super.onAdd(item, oldCount);
+        }
+
+        override void onRemove(delegateType item, size_t oldCount) {
             import std.algorithm : countUntil, remove;
-            auto oldCount = normalizedCount;
             auto i = _list.countUntil(item);
             if(i > -1) {
                 _list = _list.remove(i);
             }
-            notify(EventListOperation.Removed, item, oldCount);
+            super.onRemove(item, oldCount);
+        }
+        
+        override @property size_t normalizedCount() {
+            return _trigger !is null ? _trigger.count : 0;
+        }
+        
+        override void onChanged(EventListOperation operation, delegateType item, size_t oldCount) {
+            if(_trigger !is null) {
+                if(_trigger.changed) {
+                    _trigger.changed(operation, item);
+                }
+                auto subscriptionCount = normalizedCount;
+                if(_trigger.activation !is null && ((oldCount == 0 && subscriptionCount == 1) || (oldCount == 1 && subscriptionCount == 0))) {
+                    _trigger.activation(_trigger, this.active); 
+                }
+            }
         }
 
-}
-
-import core.thread;
-
-class FiberedEventList(TReturn, Args...) : EventList!(TReturn, Args) {
-    protected override TReturn onExecute(TReturn delegate(Args) item, Args args) {
-        static if (is( TReturn == void )) {
-            // it's void returning, don't do anything
-            Fiber fiber = new Fiber( {
-                item(args);             
-            });
-            fiber.call;
-        } else {
-            // execute saving the last result
-            TReturn v;
-            Fiber fiber = new Fiber( {
-                v = item(args);             
-            });
-            fiber.call;
-            return v;
-        }
-    }
 }
