@@ -36,17 +36,6 @@ enum EventOperation {
 abstract class Event(TReturn, Args...) {
     alias TReturn delegate(Args) delegateType;
     public: 
-        auto opBinary(string op)(delegateType rhs) {
-            static if (op == "^") {
-                this.add(rhs);
-            }
-            else static if (op == "^^") {
-                this.addAsync(rhs);
-            }
-            else static assert(0, "Operator "~op~" not implemented");
-            return this;
-        }
-
         abstract void add(delegateType item);
 
         final void addAsync(delegateType item) {
@@ -85,6 +74,26 @@ class Action(TReturn, Args...) : Event!(TReturn, Args) {
 
     override void add(delegateType item) {
         _handler(item);
+    }
+    auto opBinary(string op)(delegateType rhs) {
+        static if (op == "^") {
+            assert(0, "Operator ^ is only valid for events, use ^= instead");
+        }
+        else static if (op == "^^") {
+            assert(0, "Operator ^^ is only valid for events, use ^^= instead");
+        }
+        else static assert(0, "Operator "~op~" not implemented");
+        return this;
+    }
+    auto opOpAssign(string op)(delegateType rhs) {
+        static if (op == "^") {
+            this.add(rhs);
+        }
+        else static if (op == "^^") {
+            this.addAsync(rhs);
+        }
+        else static assert(0, "Operator "~op~" not implemented");
+        return this;
     }
 }
 
@@ -166,6 +175,29 @@ class EventList(TReturn, Args...) : Event!(TReturn, Args) {
             _trigger.activation = activation;
             return _trigger;
         }
+
+        auto opOpAssign(string op)(delegateType rhs) {
+            static if (op == "^") {
+                assert(0, "Operator ^= is only valid for actions, use ^ instead");
+            }
+            else static if (op == "^^") {
+                assert(0, "Operator ^^= is only valid for actions, use ^^ instead");
+            }
+            else static assert(0, "Operator "~op~" not implemented");
+            return this;
+        }
+
+        auto opBinary(string op)(delegateType rhs) {
+            static if (op == "^") {
+                this.add(rhs);
+            }
+            else static if (op == "^^") {
+                this.addAsync(rhs);
+            }
+            else static assert(0, "Operator "~op~" not implemented");
+            return this;
+        }
+
 
     protected:
 

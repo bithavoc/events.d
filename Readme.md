@@ -167,11 +167,13 @@ Example:
             return action;
         };
         int values;
-        foo(5) ^ (i) {
+        foo(5) ^= (i) {
             values+=i;
         };
         assert(values == 10);
 ```
+
+The sintax sugar to subscribe in the same fiber is `^=` and `^^=` for fibered subscriptions.
 
 ## Building
 

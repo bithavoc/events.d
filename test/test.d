@@ -256,9 +256,29 @@ unittest {
             return action;
         };
         int values;
-        foo(5) ^ (i) {
+        foo(5) ^= (i) {
             values+=i;
         };
+        assert(values == 10);
+    }
+    {
+        // Action Fibered
+        auto foo = function Action!(void, int)(int max) {
+            auto action = new Action!(void, int)((trigger) {
+                    for(int i = 0; i < max; i++) {
+                        trigger(i);
+                    }
+            });
+            return action;
+        };
+        int values;
+        Fiber executedFiber = null;
+        foo(5) ^^= (i) {
+            values+=i;
+            executedFiber = Fiber.getThis;
+        };
+        assert(executedFiber !is null);
+        assert(executedFiber != Fiber.getThis);
         assert(values == 10);
     }
     writeln("tests just ran");
