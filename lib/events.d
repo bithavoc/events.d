@@ -77,10 +77,10 @@ class Action(TReturn, Args...) : Event!(TReturn, Args) {
     }
     auto opBinary(string op)(delegateType rhs) {
         static if (op == "^") {
-            assert(0, "Operator ^ is only valid for events, use ^= instead");
+            static assert(0, "Operator ^ is only valid for events, use ^= instead");
         }
         else static if (op == "^^") {
-            assert(0, "Operator ^^ is only valid for events, use ^^= instead");
+            static assert(0, "Operator ^^ is only valid for events, use ^^= instead");
         }
         else static assert(0, "Operator "~op~" not implemented");
         return this;
@@ -178,10 +178,10 @@ class EventList(TReturn, Args...) : Event!(TReturn, Args) {
 
         auto opOpAssign(string op)(delegateType rhs) {
             static if (op == "^") {
-                assert(0, "Operator ^= is only valid for actions, use ^ instead");
+                static assert(0, "Operator ^= is only valid for actions, use ^ instead");
             }
             else static if (op == "^^") {
-                assert(0, "Operator ^^= is only valid for actions, use ^^ instead");
+                static assert(0, "Operator ^^= is only valid for actions, use ^^ instead");
             }
             else static assert(0, "Operator "~op~" not implemented");
             return this;
