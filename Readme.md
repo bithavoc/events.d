@@ -1,7 +1,7 @@
-events.d
+events for D
 ===
 
-events.d is an Event Object Model for the D programming language, with elegant design and beautiful syntax sugar.
+events is an Event Object Model for the D programming language, with elegant design and beautiful syntax sugar.
 
 ## How it works
 

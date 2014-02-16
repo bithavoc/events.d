@@ -1,5 +1,5 @@
 {
-    "name": "events.d",
+    "name": "events",
     "description": "Event Object Model",
     "copyright": "Copyright © 2013, 2014, Heapsource.com",
     "homepage": "https://github.com/heapsource/events.d",
