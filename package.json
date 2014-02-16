@@ -6,5 +6,6 @@
     "authors": ["thepumpkin1979", "heapsource"],
     "license": "MIT",
     "targetType": "library",
-    "importPaths": ["lib"]
+    "importPaths": ["lib"],
+    "sourcePaths": ["lib"]
 }
