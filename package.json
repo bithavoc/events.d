@@ -1,0 +1,10 @@
+{
+    "name": "events.d",
+    "description": "Event Object Model",
+    "copyright": "Copyright © 2013, 2014, Heapsource.com",
+    "homepage": "https://github.com/heapsource/events.d",
+    "authors": ["thepumpkin1979", "heapsource"],
+    "license": "MIT",
+    "targetType": "library",
+    "importPaths": ["lib"]
+}
