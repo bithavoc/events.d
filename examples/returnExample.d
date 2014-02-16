@@ -13,7 +13,7 @@ void main() {
     event ^ (age) {
         return "second age is %d".format(age);
     };
-    event.add((age) {
+    event.addSync((age) {
         return "third age is %d".format(age);
     });
     auto text = trigger(30);

@@ -28,11 +28,11 @@ The trigger objects works like a function to call all the subscribed delegates.
 
 ### Subscription
 
-Subscription is performed by the `add` method:
+Subscription is performed by the `addSync` method:
 
 
 ```D
-    event.add({
+    event.addSync({
         "first subscription".writeln;
     });
 ```
@@ -174,6 +174,57 @@ Example:
 ```
 
 The sintax sugar to subscribe in the same fiber is `^=` and `^^=` for fibered subscriptions.
+
+### Advanced: Execution Strictness
+
+Both classes `EventList` and `Action` allow users to use `addSync` or `addAsync` at will, however, there are scenarios where the author of the event/actions wants to enforce certain execution mode for subscriptions.
+
+The classes `StrictEventList` and `StrictAction` allow authors enforce the execution type for the subscribers.
+
+Example of strictly Asynchronous Action:
+
+```D
+        StrictAction!(StrictTrigger.Async, void) asyncAction;
+        ...
+        asyncAction.addAsync({}); // OK
+        asyncAction ^^= {}; // OK
+        asyncAction.addSync({}); // ERROR: fails to compile
+        asyncAction ^= {}; // ERROR: fails to compile
+```
+
+Example of strictly Synchronous Action:
+
+```D
+        StrictAction!(StrictTrigger.Sync, void) syncAction;
+        ...
+        syncAction.addAsync({}); // ERROR: fails to compile
+        syncAction ^^= {}; // ERROR: fails to compile
+        syncAction.addSync({}); // OK
+        syncAction ^= {}; // OK
+```
+
+Example of strictly Asynchronous Event:
+
+```D
+        StrictEventList!(StrictTrigger.Async, void) asyncEvent;
+        ...
+        asyncEvent.addAsync({}); // OK
+        asyncEvent ^^ {}; // OK
+        asyncEvent.addSync({}); // ERROR: fails to compile
+        asyncEvent ^ {}; // ERROR: fails to compile
+```
+
+Example of strictly Asynchronous Event:
+
+```D
+        StrictEventList!(StrictTrigger.Sync, void) syncEvent;
+        ...
+        syncEvent.addAsync({}); // ERROR: fails to compile
+        syncEvent ^^ {}; // ERROR: fails to compile
+        syncEvent.addSync({}); // OK
+        syncEvent ^ {}; // OK
+```
+
 
 ## Building
 

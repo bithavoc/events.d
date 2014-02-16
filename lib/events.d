@@ -35,10 +35,16 @@ enum EventOperation {
 
 abstract class Event(TReturn, Args...) {
     alias TReturn delegate(Args) delegateType;
-    public: 
+    protected:
         abstract void add(delegateType item);
 
-        final void addAsync(delegateType item) {
+    public: 
+
+        void addSync(delegateType item) {
+            this.add(item);
+        }
+
+        void addAsync(delegateType item) {
             auto fibered = delegate TReturn(Args args) {
                 static if (is( TReturn == void )) {
                     // it's void returning, don't do anything
@@ -67,13 +73,14 @@ class Action(TReturn, Args...) : Event!(TReturn, Args) {
     private: 
     handlerType _handler;
 
+    protected:
+    override void add(delegateType item) {
+        _handler(item);
+    }
+
     public:
     this(handlerType handler) {
         _handler = handler;
-    }
-
-    override void add(delegateType item) {
-        _handler(item);
     }
     auto opBinary(string op)(delegateType rhs) {
         static if (op == "^") {
@@ -102,12 +109,13 @@ class EventList(TReturn, Args...) : Event!(TReturn, Args) {
     private:
         delegateType[] _list;
         Trigger _trigger;
-    public:
 
+    protected:
         final override void add(delegateType item) {
             auto oldCount = normalizedCount;
             onAdd(item, oldCount);
         }
+    public:
 
         final void remove(delegateType item) {
             auto oldCount = normalizedCount;
@@ -139,7 +147,7 @@ class EventList(TReturn, Args...) : Event!(TReturn, Args) {
                 static if (is( TReturn == void )) {
                     // it's void returning, don't do anything
                     foreach(d;_list) {
-                        return this.outer.onExecute(d, args);
+                        this.outer.onExecute(d, args);
                     }
                 } else {
                     // execute saving the last result
@@ -235,4 +243,89 @@ class EventList(TReturn, Args...) : Event!(TReturn, Args) {
             }
         }
 
+}
+
+enum StrictTrigger {
+    Sync = "Sync", // use the current fiber to execute all the handler
+    Async = "Async" // create a new fiber for every handler
+}
+
+class StrictEventList(StrictTrigger style, TReturn, Args...) : EventList!(TReturn, Args) {
+    public:
+        auto opBinary(string op)(delegateType rhs) {
+            static if (op == "^") {
+                static if(style == StrictTrigger.Async) {
+                    static assert(0, "Operator ^ is disallowed in strictly Async events, use ^^ instead for an async subscription");
+                }
+                else {
+                    super.opBinary!op(rhs);
+                }
+            }
+            else static if (op == "^^") {
+                static if(style == StrictTrigger.Sync) {
+                    static assert(0, "Operator ^^ is disallowed in strictly Sync events, use ^ instead for a sync subscription");
+                }
+                else {
+                    super.opBinary!op(rhs);
+                }
+            }
+            else static assert(0, "Operator "~op~" not implemented");
+            return this;
+        }
+
+        static if(style == StrictTrigger.Sync) {
+            @disable
+            final override void addAsync(delegateType item) {
+                assert(0, "addAsync is disallowed in strictly Sync events, use addSync instead for a sync subscription");
+            }
+        }
+
+        static if(style == StrictTrigger.Async) {
+            @disable
+            final override void addSync(delegateType item) {
+                assert(0, "addSync is disallowed in strictly Async events, use addAsync instead for a async subscription");
+            }
+        }
+}
+
+class StrictAction(StrictTrigger style, TReturn, Args...) : Action!(TReturn, Args) {
+    public:
+        this(handlerType handler) {
+            super(handler);
+        }
+
+        auto opOpAssign(string op)(delegateType rhs) {
+            static if (op == "^") {
+                static if(style == StrictTrigger.Async) {
+                    static assert(0, "Operator ^= is disallowed in strictly Async actions, use ^^= instead for an async subscription");
+                }
+                else {
+                    super.opOpAssign!op(rhs);
+                }
+            }
+            else static if (op == "^^") {
+                static if(style == StrictTrigger.Sync) {
+                    static assert(0, "Operator ^^= is disallowed in strictly Sync actions, use ^= instead for a sync subscription");
+                }
+                else {
+                    super.opOpAssign!op(rhs);
+                }
+            }
+            else static assert(0, "Operator "~op~" not implemented");
+            return this;
+        }
+
+        static if(style == StrictTrigger.Sync) {
+            @disable
+            final override void addAsync(delegateType item) {
+                assert(0, "addAsync is disallowed in strictly Sync actions, use addSync instead for a sync subscription");
+            }
+        }
+
+        static if(style == StrictTrigger.Async) {
+            @disable
+            final override void addSync(delegateType item) {
+                assert(0, "addSync is disallowed in strictly Async actions, use addAsync instead for a async subscription");
+            }
+        }
 }

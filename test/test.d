@@ -1,4 +1,4 @@
-// Copyright (c) 2013 Heapsource.com and Contributors - http://www.heapsource.com
+// Copyright (c) 2013, 2014 Heapsource.com and Contributors - http://www.heapsource.com
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -22,13 +22,16 @@
 module events_test;
 import events;
 import std.stdio;
+import core.thread : Fiber;
+import std.exception : assertThrown;
+import core.exception : AssertError;
 
 unittest {
     {
         // void event list
         int executedCount = 0;
         auto list = new EventList!void;
-        list.add({
+        list.addSync({
                 executedCount++;
                 });
         auto trigger = list.own;
@@ -39,7 +42,7 @@ unittest {
     {
         // trigger execute with return type event list
         auto list = new EventList!int;
-        list.add({
+        list.addSync({
             return 2000;
         });
         auto trigger = list.own;
@@ -89,7 +92,7 @@ unittest {
     {
         // owning can't happen two times
         auto list = new EventList!void;
-        list.add({
+        list.addSync({
                 // nop
         });
         auto trigger = list.own;
@@ -183,7 +186,6 @@ unittest {
         assert(sentTrigger == trigger, "trigger given in the activation delegate must be the same as the owned"); 
     }
     {
-        import core.thread : Fiber;
         // ^^ async
         auto read = new EventList!void;
         Fiber fib;
@@ -196,7 +198,6 @@ unittest {
         assert(fib !is null);
     }
     {
-        import core.thread : Fiber;
         // addAsync
         auto read = new EventList!void;
         Fiber fib;
@@ -209,7 +210,6 @@ unittest {
         assert(fib !is null);
     }
     {
-        import core.thread;
         // Return Fibered
         auto list = new EventList!(int);
         auto trigger = list.own;
@@ -229,7 +229,6 @@ unittest {
         assert(executedFiber != executedFiber2, "make sure every delegate gets it's own Fiber");
     }
     {
-        import core.thread;
         // Void Fibered
         auto list = new EventList!void;
         auto trigger = list.own;
@@ -280,6 +279,116 @@ unittest {
         assert(executedFiber !is null);
         assert(executedFiber != Fiber.getThis);
         assert(values == 10);
+    }
+    {
+        // Async Strict EventList
+        auto list = new StrictEventList!(StrictTrigger.Async, void);
+        auto casted = cast(Event!(void))list;
+        static assert(!__traits(compiles,  list ^ { } ), "using ^ to subscribe synchronously to a async strict event should fail to compile");
+        static assert(!__traits(compiles,  list.addSync({ })), "using addSync to subscribe synchronously to a async strict event should fail to compile");
+        assertThrown!AssertError(casted.addSync({ }), "using addSync to subscribe asynchronously to a async strict event should fail at runtime");
+        static assert(__traits(compiles,  list ^^ { } ), "using ^^ to subscribe asynchronously to a async strict event should compile successfully");
+    }
+    {
+        // Sync Strict EventList
+        auto list = new StrictEventList!(StrictTrigger.Sync, void);
+        auto casted = cast(Event!(void))list;
+        static assert(!__traits(compiles,  list ^^ { } ), "using ^^ to subscribe asynchronously to a sync strict event should fail to compile");
+        static assert(!__traits(compiles,  list.addAsync({ })), "using addAsync to subscribe asynchronously to a sync strict event should fail to compile");
+        assertThrown!AssertError(casted.addAsync({ }), "using addAsync to subscribe asynchronously to a sync strict event should fail at runtime");
+        static assert(__traits(compiles,  list ^ { } ), "using ^ to subscribe asynchronously to a sync strict event should compile successfully");
+
+    }
+    {
+        // Strictly Fibered EventList
+        auto list = new StrictEventList!(StrictTrigger.Async, void);
+        auto trigger = list.own;
+        Fiber executedFiber = null;
+        Fiber executedFiber2 = null;
+        list ^^ {
+            executedFiber = Fiber.getThis;
+        };
+        list.addAsync({
+            executedFiber2 = Fiber.getThis;
+        });
+        trigger();
+        assert(executedFiber !is null, "the delegate 1 must be invoked inside a fiber");
+        assert(executedFiber2 !is null, "the delegate 2 must be invoked inside a fiber");
+        assert(executedFiber != executedFiber2, "make sure every delegate gets it's own Fiber");
+    }
+    {
+        // Strictly Sync EventList
+        auto list = new StrictEventList!(StrictTrigger.Sync, void);
+        auto trigger = list.own;
+        Fiber executedFiber = null;
+        Fiber executedFiber2 = null;
+        list ^ {
+            executedFiber = Fiber.getThis;
+        };
+        list.addSync({
+            executedFiber2 = Fiber.getThis;
+        });
+        auto fib = new Fiber({
+            trigger();
+        });
+        fib.call;
+        assert(trigger.count == 2, "there should be two subscriptions in the event");
+        assert(executedFiber !is null);
+        assert(executedFiber == fib);
+        assert(executedFiber2 !is null);
+        assert(executedFiber2 == fib);
+    }
+    {
+        // Strictly Fibered Action
+        auto list = new StrictAction!(StrictTrigger.Async, void)((t) {
+            t();   
+        });
+        Fiber executedFiber = null;
+        auto fib = new Fiber({
+            list ^^= {
+                executedFiber = Fiber.getThis;
+            };
+        });
+        fib.call;
+        assert(executedFiber !is null, "the delegate 1 must be invoked inside a fiber");
+        assert(executedFiber != fib);
+    }
+    {
+        // Strictly Sync Action
+        auto list = new StrictAction!(StrictTrigger.Sync, void)((t) {
+            t();   
+        });
+        Fiber executedFiber = null;
+        auto fib = new Fiber({
+            list ^= {
+                executedFiber = Fiber.getThis;
+            };
+        });
+        fib.call;
+        assert(executedFiber !is null);
+        assert(executedFiber == fib);
+    }
+    {
+        // Async Strict Action
+        auto action = new StrictAction!(StrictTrigger.Async, void)((t) {
+            t();        
+        });
+        auto casted = cast(Event!(void))action;
+        static assert(!__traits(compiles,  action ^= { } ), "using ^= to subscribe synchronously to a async strict action should fail to compile");
+        static assert(!__traits(compiles,  action.addSync({ })), "using addSync to subscribe synchronously to a async strict action should fail to compile");
+        assertThrown!AssertError(casted.addSync({ }), "using addSync to subscribe asynchronously to a async strict action should fail at runtime");
+        static assert(__traits(compiles,  action ^^= { } ), "using ^^= to subscribe asynchronously to a async strict action should compile successfully");
+    }
+    {
+        // Sync Strict Action
+        auto action = new StrictAction!(StrictTrigger.Sync, void)((t) {
+            t();        
+        });
+        auto casted = cast(Event!(void))action;
+        static assert(!__traits(compiles,  action ^^= { } ), "using ^^= to subscribe asynchronously to a sync strict action should fail to compile");
+        static assert(!__traits(compiles,  action.addAsync({ })), "using addAsync to subscribe asynchronously to a sync strict action should fail to compile");
+        assertThrown!AssertError(casted.addAsync({ }), "using addAsync to subscribe asynchronously to a sync strict action should fail at runtime");
+        static assert(__traits(compiles,  action ^= { } ), "using ^= to subscribe asynchronously to a sync strict action should compile successfully");
     }
     writeln("tests just ran");
 } // test
